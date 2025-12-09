@@ -93,89 +93,89 @@ public class QuarkManager : Singleton<QuarkManager>
     }
 
     private void Update()
-{
-    // === PALM-UP LOGIC (your existing code) ===
-
-    // World-space up direction of the wrist
-    Vector3 palmNormal = -quarkSpawnParent.up; // already world-space
-
-    // Debug line in Scene view
-    Debug.DrawLine(quarkSpawnParent.position,
-                   quarkSpawnParent.position + palmNormal * 0.1f,
-                   Color.blue);
-
-    // Compare wrist up with global up
-    float dot = Vector3.Dot(palmNormal.normalized, Vector3.up);
-    bool palmUp = dot > palmUpThreshold;
-
-    // Only log when state changes
-    if (palmUp != lastPalmUp)
     {
-        if (palmUp)
+        // === PALM-UP LOGIC (your existing code) ===
+
+        // World-space up direction of the wrist
+        Vector3 palmNormal = -quarkSpawnParent.up; // already world-space
+
+        // Debug line in Scene view
+        Debug.DrawLine(quarkSpawnParent.position,
+                       quarkSpawnParent.position + palmNormal * 0.1f,
+                       Color.blue);
+
+        // Compare wrist up with global up
+        float dot = Vector3.Dot(palmNormal.normalized, Vector3.up);
+        bool palmUp = dot > palmUpThreshold;
+
+        // Only log when state changes
+        if (palmUp != lastPalmUp)
         {
-            justVibesSource.clip = justVibesClips[UnityEngine.Random.Range(0, justVibesClips.Count)];
-            justVibesSource.Play();
+            if (palmUp)
+            {
+                justVibesSource.clip = justVibesClips[UnityEngine.Random.Range(0, justVibesClips.Count)];
+                justVibesSource.Play();
+            }
+            Debug.Log($"[QuarkManager] PalmUp = {palmUp} (dot: {dot:F3})");
+            lastPalmUp = palmUp;
         }
-        Debug.Log($"[QuarkManager] PalmUp = {palmUp} (dot: {dot:F3})");
-        lastPalmUp = palmUp;
+
+        if (spawnedQuark != null)
+        {
+            spawnedQuark.gameObject.SetActive(palmUp);
+        }
+
+        // === TWO-HAND PINCH SCALING ===
+
+        if (_leftHand == null || _rightHand == null || _scaleTarget == null)
+            return;
+
+        // 1) Check pinch state on both hands (index finger)
+        bool leftPinching =
+            _leftHand.GetFingerIsPinching(HandFinger.Index) &&
+            _leftHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
+
+        bool rightPinching =
+            _rightHand.GetFingerIsPinching(HandFinger.Index) &&
+            _rightHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
+
+        bool bothPinching = leftPinching && rightPinching;
+
+        // 2) Get a representative position for each hand
+        //    (you can use wrist, index tip, or a custom anchor)
+        Pose leftPose, rightPose;
+        if (!_leftHand.GetRootPose(out leftPose) || !_rightHand.GetRootPose(out rightPose))
+            return;
+
+        Vector3 leftPos  = leftPose.position;
+        Vector3 rightPos = rightPose.position;
+
+        float currentDistance = Vector3.Distance(leftPos, rightPos);
+
+        // 3) State transitions
+        if (bothPinching && !_isTwoHandScaling)
+        {
+            // just started two-hand pinch → capture baseline
+            _isTwoHandScaling = true;
+            _initialHandsDistance = Mathf.Max(currentDistance, 0.001f); // avoid div by zero
+            _initialObjectScale = _scaleTarget.localScale;
+            // Debug.Log("[QuarkManager] Two-hand pinch scaling started.");
+        }
+        else if (bothPinching && _isTwoHandScaling)
+        {
+            // actively scaling
+            float scaleFactor = currentDistance / _initialHandsDistance;
+
+            // Optionally enforce uniform scaling based on x
+            float uniform = Mathf.Clamp(scaleFactor, minScale, maxScale);
+            _scaleTarget.localScale = _initialObjectScale * uniform;
+        }
+        else if (!bothPinching && _isTwoHandScaling)
+        {
+            // pinch released on at least one hand → stop scaling
+            _isTwoHandScaling = false;
+            // Debug.Log("[QuarkManager] Two-hand pinch scaling ended.");
+        }
     }
-
-    if (spawnedQuark != null)
-    {
-        spawnedQuark.gameObject.SetActive(palmUp);
-    }
-
-    // === TWO-HAND PINCH SCALING ===
-
-    if (_leftHand == null || _rightHand == null || _scaleTarget == null)
-        return;
-
-    // 1) Check pinch state on both hands (index finger)
-    bool leftPinching =
-        _leftHand.GetFingerIsPinching(HandFinger.Index) &&
-        _leftHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
-
-    bool rightPinching =
-        _rightHand.GetFingerIsPinching(HandFinger.Index) &&
-        _rightHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
-
-    bool bothPinching = leftPinching && rightPinching;
-
-    // 2) Get a representative position for each hand
-    //    (you can use wrist, index tip, or a custom anchor)
-    Pose leftPose, rightPose;
-    if (!_leftHand.GetRootPose(out leftPose) || !_rightHand.GetRootPose(out rightPose))
-        return;
-
-    Vector3 leftPos  = leftPose.position;
-    Vector3 rightPos = rightPose.position;
-
-    float currentDistance = Vector3.Distance(leftPos, rightPos);
-
-    // 3) State transitions
-    if (bothPinching && !_isTwoHandScaling)
-    {
-        // just started two-hand pinch → capture baseline
-        _isTwoHandScaling = true;
-        _initialHandsDistance = Mathf.Max(currentDistance, 0.001f); // avoid div by zero
-        _initialObjectScale = _scaleTarget.localScale;
-        // Debug.Log("[QuarkManager] Two-hand pinch scaling started.");
-    }
-    else if (bothPinching && _isTwoHandScaling)
-    {
-        // actively scaling
-        float scaleFactor = currentDistance / _initialHandsDistance;
-
-        // Optionally enforce uniform scaling based on x
-        float uniform = Mathf.Clamp(scaleFactor, minScale, maxScale);
-        _scaleTarget.localScale = _initialObjectScale * uniform;
-    }
-    else if (!bothPinching && _isTwoHandScaling)
-    {
-        // pinch released on at least one hand → stop scaling
-        _isTwoHandScaling = false;
-        // Debug.Log("[QuarkManager] Two-hand pinch scaling ended.");
-    }
-}
 
 }

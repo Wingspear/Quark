@@ -95,6 +95,15 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.meta.xr.simulator.synthenvbuilder": {
+      "version": "60.0.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.postprocessing": "3.2.2"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.openai.unity": {
       "version": "8.8.7",
       "depth": 0,
@@ -237,6 +246,15 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.postprocessing": {
+      "version": "3.5.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.physics": "1.0.0"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.render-pipelines.core": {
@@ -465,6 +483,15 @@
         "com.unity.xr.management": "4.4.0",
         "com.unity.xr.arfoundation": "6.3.0",
         "com.unity.xr.compositionlayers": "2.1.1"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.xr.oculus": {
+      "version": "4.5.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.xr.management": "4.4.0"
       },
       "url": "https://packages.unity.com"
     },
