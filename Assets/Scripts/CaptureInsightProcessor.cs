@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Jusvibes.Core;
 using OpenAI;
 using OpenAI.Files;
 using OpenAI.Responses;
@@ -14,7 +15,7 @@ public class VisualInsights
 {
     public Color averageColor;
     public Color[] palette;      // k-means palette
-    
+
     // For visual system
     public Color primaryColor;
     public Color secondaryColor;
@@ -22,10 +23,9 @@ public class VisualInsights
 
 public class CaptureInsightProcessor : MonoBehaviour
 {
-    [SerializeField] private OpenAIConfiguration openAIConfig;
     public async Task<string> FetchCaptureMusicInsights(int numCaptures = 1)
     {
-        var api = new OpenAIClient(new OpenAIAuthentication(openAIConfig), new OpenAISettings(openAIConfig));
+        var api = ApiConfigManager.Instance.CreateOpenAIClient();
 
         List<FileResponse> files = new();
         for (int i = 0; i < numCaptures; i++)
@@ -77,103 +77,124 @@ public class CaptureInsightProcessor : MonoBehaviour
         return response;
     }
     
-    public async Task<VisualInsights> FetchCaptureVisualInsights(int numCaptures = 1)
+    public async Task<(VisualInsights insights, string musicPrompt)> FetchCaptureVisualInsights(int numCaptures = 1)
     {
         VisualInsights insights = new();
+        string musicPrompt = null;
 
-        // ---- 1. Load image bytes ----
-        List<byte[]> allImageBytes = new();
-        for (int i = 0; i < numCaptures; i++)
+        try
         {
-            string path = Application.persistentDataPath + "/capture" + i + ".png";
-
-            if (!File.Exists(path))
+            // ---- 1. Load image bytes ----
+            List<byte[]> allImageBytes = new();
+            for (int i = 0; i < numCaptures; i++)
             {
-                Debug.LogWarning("Capture missing: " + path);
-                continue;
+                string path = Application.persistentDataPath + "/capture" + i + ".png";
+
+                if (!File.Exists(path))
+                {
+                    Debug.LogWarning("Capture missing: " + path);
+                    continue;
+                }
+
+                byte[] bytes = await File.ReadAllBytesAsync(path);
+                allImageBytes.Add(bytes);
             }
 
-            byte[] bytes = await File.ReadAllBytesAsync(path);
-            allImageBytes.Add(bytes);
+            if (allImageBytes.Count == 0)
+            {
+                throw new Exception("No capture images found to process");
+            }
+
+            // ---- 2. Compute k-means palette ----
+            Color[] palette = await GetKMeansPaletteAsync(
+                allImageBytes,
+                k: 5,
+                sampleStep: 8,
+                maxIterations: 10
+            );
+
+            insights.palette = palette;
+
+            // ---- 3. Extract primary + secondary colors ----
+            if (palette != null && palette.Length > 0)
+            {
+                // Dominant color = cluster 0
+                Color dominant = palette[0];
+
+                // Primary = boosted dominant
+                insights.primaryColor = BoostColor(dominant);
+
+                // Secondary = complementary accent
+                insights.secondaryColor = BoostColor(Complement(insights.primaryColor), 0.2f, 0.1f);
+
+                // For legacy compatibility, set averageColor = dominant
+                insights.averageColor = dominant;
+            }
+            else
+            {
+                insights.primaryColor = Color.white;
+                insights.secondaryColor = Color.gray;
+                insights.averageColor = Color.black;
+            }
+
+            // ---- 4. OpenAI: Upload files + ask for prompt ----
+            var api = ApiConfigManager.Instance.CreateOpenAIClient();
+
+            List<FileResponse> files = new();
+            for (int i = 0; i < numCaptures; i++)
+            {
+                string path = Application.persistentDataPath + "/capture" + i + ".png";
+                if (!File.Exists(path)) continue;
+
+                var file = await api.FilesEndpoint.UploadFileAsync(path, FilePurpose.Vision);
+                files.Add(file);
+            }
+
+            if (files.Count == 0)
+            {
+                throw new Exception("Failed to upload any images to OpenAI");
+            }
+
+            var contents = new List<IResponseContent>
+            {
+                new OpenAI.Responses.TextContent(
+                    "Analyze the space's mood, lighting, textures, and season to guess what activity the user might be doing. " +
+                    "Use this to create an instrumental ambient music prompt. Describe the atmosphere vividly, then suggest a " +
+                    "flexible genre, instruments, and subtle nature or special effects. Keep the generated text concise (<500 characters)."
+                )
+            };
+
+            foreach (var f in files)
+                contents.Add(new OpenAI.Responses.ImageContent(fileId: f.Id));
+
+            var input = new List<IResponseItem>
+            {
+                new Message(Role.User, contents.ToArray())
+            };
+
+            var request = new CreateResponseRequest(input: input, model: "gpt-4.1-mini");
+
+            var response = await api.ResponsesEndpoint.CreateModelResponseAsync(request);
+            var responseItem = response.Output.LastOrDefault();
+
+            if (responseItem != null)
+            {
+                musicPrompt = responseItem.ToString();
+                Debug.Log("OpenAI Response: " + musicPrompt);
+                response.PrintUsage();
+            }
+            else
+            {
+                throw new Exception("OpenAI returned no response");
+            }
+
+            return (insights, musicPrompt);
         }
-
-        // ---- 2. Compute k-means palette ----
-        Color[] palette = await GetKMeansPaletteAsync(
-            allImageBytes,
-            k: 5,
-            sampleStep: 8,
-            maxIterations: 10
-        );
-
-        insights.palette = palette;
-
-        // ---- 3. Extract primary + secondary colors ----
-        if (palette != null && palette.Length > 0)
+        catch (Exception ex)
         {
-            // Dominant color = cluster 0
-            Color dominant = palette[0];
-
-            // Primary = boosted dominant
-            insights.primaryColor = BoostColor(dominant);
-
-            // Secondary = complementary accent
-            insights.secondaryColor = BoostColor(Complement(insights.primaryColor), 0.2f, 0.1f);
-
-            // For legacy compatibility, set averageColor = dominant
-            insights.averageColor = dominant;
+            Debug.LogError("FetchCaptureVisualInsights failed: " + ex.Message);
+            throw;
         }
-        else
-        {
-            insights.primaryColor = Color.white;
-            insights.secondaryColor = Color.gray;
-            insights.averageColor = Color.black;
-        }
-
-        // ---- 4. OpenAI: Upload files + ask for prompt ----
-        var api = new OpenAIClient(
-            new OpenAIAuthentication(openAIConfig),
-            new OpenAISettings(openAIConfig)
-        );
-
-        List<FileResponse> files = new();
-        for (int i = 0; i < numCaptures; i++)
-        {
-            string path = Application.persistentDataPath + "/capture" + i + ".png";
-            if (!File.Exists(path)) continue;
-
-            var file = await api.FilesEndpoint.UploadFileAsync(path, FilePurpose.Vision);
-            files.Add(file);
-        }
-
-        var contents = new List<IResponseContent>
-        {
-            new OpenAI.Responses.TextContent(
-                "Analyze the space’s mood, lighting, textures, and season to guess what activity the user might be doing. " +
-                "Use this to create an instrumental ambient music prompt. Describe the atmosphere vividly, then suggest a " +
-                "flexible genre, instruments, and subtle nature or special effects. Keep the generated text concise (<500 characters)."
-            )
-        };
-
-        foreach (var f in files)
-            contents.Add(new OpenAI.Responses.ImageContent(fileId: f.Id));
-
-        var input = new List<IResponseItem>
-        {
-            new Message(Role.User, contents.ToArray())
-        };
-
-        var request = new CreateResponseRequest(input: input, model: "gpt-4.1-mini");
-
-        var response = await api.ResponsesEndpoint.CreateModelResponseAsync(request);
-        var responseItem = response.Output.LastOrDefault();
-
-        if (responseItem != null)
-        {
-            Debug.Log(responseItem.ToString());
-            response.PrintUsage();
-        }
-
-        return insights;
     }
 
     

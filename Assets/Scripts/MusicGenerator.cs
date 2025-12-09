@@ -1,17 +1,21 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using Jusvibes.Core;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Networking;
 
 public class MusicGenerator : MonoBehaviour
 {
-    private string apiKey = "";
-    
-    [Header("Suno API")] [SerializeField] private SunoConfig sunoConfig;
+    [Header("Suno API Settings")]
     [SerializeField] private string callBackUrl = "https://dummy-url.com/callback";
     [SerializeField] private string model = "V5";
+
+    [Header("Polling Configuration")]
+    [SerializeField] private int pollIntervalMs = 3000;
+    [SerializeField] private int maxPollAttempts = 200; // 10 minutes at 3s intervals
 
     [TextArea]
     public string prompt = "";
@@ -30,14 +34,13 @@ public class MusicGenerator : MonoBehaviour
     // ---------- Public async API ----------
 
     /// <summary>
-    /// Full pipeline: load config → call Suno → poll → download → play.
+    /// Full pipeline: load config → call Suno → poll → stream → play.
     /// This Task completes only when audio is playing (or if something fails).
     /// </summary>
-    public async Task GenerateMusic(AudioSource audioSource, string userPrompt)
+    public async Task GenerateMusic(AudioSource audioSource, string userPrompt, PipelineLogger logger = null, CancellationToken cancellationToken = default)
     {
-        apiKey = sunoConfig.sunoApiKey;
-        Debug.Log("Setting api key to " + apiKey);
-        await GenerateAndPlayAsync(audioSource, userPrompt);
+        logger?.Info("Retrieving Suno API configuration");
+        await GenerateAndPlayAsync(audioSource, userPrompt, logger, cancellationToken);
     }
 
     // ---------- DTOs ----------
@@ -108,30 +111,36 @@ public class MusicGenerator : MonoBehaviour
     
     // ---------- Async pipeline ----------
 
-    private async Task GenerateAndPlayAsync(AudioSource audioSource, string userPrompt)
+    private async Task GenerateAndPlayAsync(AudioSource audioSource, string userPrompt, PipelineLogger logger, CancellationToken cancellationToken)
     {
+        logger?.Info("Starting Suno music generation", new { prompt = userPrompt });
+
         // 1. POST /generate
-        string taskId = await CallGenerateEndpointAsync(userPrompt);
+        string taskId = await CallGenerateEndpointAsync(userPrompt, logger, cancellationToken);
         if (string.IsNullOrEmpty(taskId))
         {
-            Debug.LogError("GenerateAndPlayAsync: Failed to get taskId.");
-            return;
+            throw new SunoApiException("Failed to get taskId", correlationId: logger?.CorrelationId);
         }
+
+        logger?.Info("Suno task created", new { taskId });
 
         // 2. Poll until FIRST_SUCCESS (audio ready)
-        string streamUrl = await GetMusicUrlAsync(taskId);
+        string streamUrl = await GetMusicUrlAsync(taskId, logger, cancellationToken);
         if (string.IsNullOrEmpty(streamUrl))
         {
-            Debug.LogError("GenerateAndPlayAsync: Failed to get stream URL.");
-            return;
+            throw new SunoApiException("Failed to get stream URL", taskId: taskId, correlationId: logger?.CorrelationId);
         }
 
-        // 3. Download & play
-        await DownloadAndPlayAsync(audioSource, streamUrl);
+        logger?.Info("Stream URL received", new { streamUrl });
+
+        // 3. Stream & play
+        await StreamAndPlayAsync(audioSource, streamUrl, logger, cancellationToken);
     }
 
-    private async Task<string> CallGenerateEndpointAsync(string userPrompt)
+    private async Task<string> CallGenerateEndpointAsync(string userPrompt, PipelineLogger logger, CancellationToken cancellationToken)
     {
+        string apiKey = ApiConfigManager.Instance.GetSunoApiKey();
+
         var body = new GenerateRequestBody
         {
             customMode = true,
@@ -142,6 +151,7 @@ public class MusicGenerator : MonoBehaviour
         };
 
         string json = JsonUtility.ToJson(body);
+        logger?.Info("Calling Suno generate endpoint", new { model, promptLength = userPrompt.Length });
 
         using (var request = new UnityWebRequest(GenerateUrl, "POST"))
         {
@@ -151,109 +161,144 @@ public class MusicGenerator : MonoBehaviour
             request.SetRequestHeader("Content-Type", "application/json");
             request.SetRequestHeader("Authorization", "Bearer " + apiKey);
 
-            await AwaitRequest(request);
+            await AwaitRequest(request, cancellationToken);
 
             if (request.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("Generate Error: " + request.error);
-                Debug.LogError(request.downloadHandler.text);
-                return null;
+                logger?.Error("Suno generate endpoint failed", null, new { error = request.error, response = request.downloadHandler.text });
+                throw new SunoApiException($"Generate request failed: {request.error}", correlationId: logger?.CorrelationId);
             }
 
             var resp = JsonUtility.FromJson<GenerateResponse>(request.downloadHandler.text);
             if (resp == null || resp.code != 200 || resp.data == null)
             {
-                Debug.LogError("Suno error: " + (resp != null ? resp.msg : "null response"));
-                return null;
+                var errorMsg = resp != null ? resp.msg : "null response";
+                logger?.Error("Suno API error", null, new { code = resp?.code, message = errorMsg });
+                throw new SunoApiException($"API returned error: {errorMsg}", resp?.code, correlationId: logger?.CorrelationId);
             }
 
             string taskId = resp.data.taskId;
-            Debug.Log("Task ID: " + taskId);
+            logger?.Info("Task ID received", new { taskId });
             return taskId;
         }
     }
 
-    private async Task<string> GetMusicUrlAsync(string taskId)
+    private async Task<string> GetMusicUrlAsync(string taskId, PipelineLogger logger, CancellationToken cancellationToken)
     {
+        string apiKey = ApiConfigManager.Instance.GetSunoApiKey();
         string url = $"{RecordInfoUrl}?taskId={taskId}";
+        int pollAttempt = 0;
 
-        while (true)
+        logger?.Info("Starting to poll for music generation status", new { taskId, maxAttempts = maxPollAttempts });
+
+        while (pollAttempt < maxPollAttempts)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            pollAttempt++;
+
             using (var req = UnityWebRequest.Get(url))
             {
                 req.SetRequestHeader("Authorization", "Bearer " + apiKey);
 
-                await AwaitRequest(req);
+                await AwaitRequest(req, cancellationToken);
 
                 if (req.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.LogError("Poll Error: " + req.error);
-                    return null;
+                    logger?.Warning($"Poll attempt {pollAttempt} failed", new { error = req.error });
+
+                    // Continue polling on transient errors
+                    await Task.Delay(pollIntervalMs, cancellationToken);
+                    continue;
                 }
 
                 var resp = JsonUtility.FromJson<RecordInfoResponse>(req.downloadHandler.text);
 
                 if (resp == null || resp.data == null)
                 {
-                    Debug.LogError("Bad poll response: " + req.downloadHandler.text);
-                    return null;
+                    logger?.Error("Invalid poll response", null, new { response = req.downloadHandler.text });
+                    throw new SunoApiException("Invalid poll response format", taskId: taskId, correlationId: logger?.CorrelationId);
                 }
 
-                Debug.Log("Status: " + resp.data.status);
+                logger?.Info($"Poll attempt {pollAttempt}/{maxPollAttempts}", new { status = resp.data.status });
 
-                // Better to wait for FIRST_SUCCESS (audio ready)
+                // Check for failure
+                if (resp.data.status == "FAILED")
+                {
+                    throw new SunoApiException("Music generation failed on Suno side", taskId: taskId, correlationId: logger?.CorrelationId);
+                }
+
+                // Check for success
                 if (resp.data.status == "FIRST_SUCCESS" || resp.data.status == "TEXT_SUCCESS")
                 {
-                    string streamUrl = resp.data.response.sunoData[0].streamAudioUrl;
-                    Debug.Log("🎵 STREAM URL READY: " + streamUrl);
-                    return streamUrl;
+                    if (resp.data.response?.sunoData != null && resp.data.response.sunoData.Length > 0)
+                    {
+                        string streamUrl = resp.data.response.sunoData[0].streamAudioUrl;
+                        logger?.Info("🎵 Stream URL ready", new { streamUrl, pollAttempts = pollAttempt });
+                        return streamUrl;
+                    }
+                    else
+                    {
+                        throw new SunoApiException("Success status but no audio data", taskId: taskId, correlationId: logger?.CorrelationId);
+                    }
                 }
             }
 
-            // wait 3s between polls
-            await Task.Delay(3000);
+            // Wait between polls
+            await Task.Delay(pollIntervalMs, cancellationToken);
         }
+
+        throw new PipelineTimeoutException("Suno", maxPollAttempts * pollIntervalMs, logger?.CorrelationId);
     }
 
-    private async Task DownloadAndPlayAsync(AudioSource audioSource, string url)
+    private async Task StreamAndPlayAsync(AudioSource audioSource, string url, PipelineLogger logger, CancellationToken cancellationToken)
     {
         if (audioSource == null)
         {
-            Debug.LogError("MusicGenerator: No AudioSource to play audio.");
-            return;
+            throw new AudioStreamException("AudioSource is null", url, logger?.CorrelationId);
         }
+
+        logger?.Info("Starting audio stream", new { url });
 
         using (var req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.MPEG))
         {
-            await AwaitRequest(req);
+            ((DownloadHandlerAudioClip)req.downloadHandler).streamAudio = true;
+
+            await AwaitRequest(req, cancellationToken);
 
             if (req.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("Audio download error: " + req.error);
-                return;
+                logger?.Error("Audio stream failed", null, new { error = req.error, url });
+                throw new AudioStreamException($"Failed to stream audio: {req.error}", url, logger?.CorrelationId);
             }
 
             var clip = DownloadHandlerAudioClip.GetContent(req);
 
             if (clip == null)
             {
-                Debug.LogError("Failed to decode audio clip from URL: " + url);
-                return;
+                logger?.Error("Failed to decode audio clip", null, new { url });
+                throw new AudioStreamException("Failed to decode audio clip", url, logger?.CorrelationId);
             }
 
             audioSource.clip = clip;
             audioSource.Play();
 
-            Debug.Log("▶️ Playing generated track. Length: " + clip.length + "s");
+            logger?.Info("▶️ Playing generated track", new { duration = clip.length, frequency = clip.frequency });
         }
     }
 
     // ---------- Helper: await UnityWebRequest ----------
 
-    private static Task AwaitRequest(UnityWebRequest request)
+    private static Task AwaitRequest(UnityWebRequest request, CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<bool>();
         var op = request.SendWebRequest();
+
+        cancellationToken.Register(() =>
+        {
+            request.Abort();
+            tcs.TrySetCanceled();
+        });
 
         op.completed += _ => tcs.TrySetResult(true);
 

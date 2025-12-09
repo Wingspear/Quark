@@ -13,12 +13,18 @@ public class AudioReactiveVFX : MonoBehaviour
     [SerializeField] private MusicGenerator musicGenerator;
 
     [Header("Frequency Analysis")]
-    [SerializeField] private int fftSize = 512;
+    [SerializeField] private int fftSize = 256; // Reduced from 512 for Quest 3 performance
     [SerializeField] private float bassBoost = 1.5f;
     [SerializeField] private float midBoost = 1.2f;
     [SerializeField] private float trebleBoost = 1.0f;
     [SerializeField] private float smoothSpeed = 10f;
     [SerializeField] private float sensitivity = 50f;
+
+    [Header("Performance (Quest Optimization)")]
+    [Tooltip("Update audio analysis every N frames (2 = every 3rd frame). Higher = better performance, lower = more responsive.")]
+    [SerializeField] private int frameSkip = 2;
+    [Tooltip("If true, uses frame-skipping for audio analysis. Improves performance significantly with multiple Quarks.")]
+    [SerializeField] private bool useFrameSkipping = true;
 
     [Header("Beat Detection")]
     [SerializeField] private bool enableBeatDetection = true;
@@ -54,15 +60,7 @@ public class AudioReactiveVFX : MonoBehaviour
     [SerializeField] private float baseEnergy = 100f;
     [SerializeField] private float energyMultiplier = 2f;
 
-    [Header("Parameter Ranges & Fallbacks")]
-    [Tooltip("Fallback values when no audio is playing")]
-    [SerializeField] private float fallbackBass = 0.1f;
-    [SerializeField] private float fallbackMid = 0.1f;
-    [SerializeField] private float fallbackTreble = 0.1f;
-    [SerializeField] private float fallbackEnergy = 100f;
-    [SerializeField] private float fallbackTurbulence = 1f;
-    [SerializeField] private float fallbackRadius = 0.4f;
-    [SerializeField] private float fallbackInnerRadius = 1.6f;
+    [Header("Parameter Ranges")]
     [Tooltip("Output ranges for normalized values")]
     [SerializeField] private Vector2 bassRange = new Vector2(0f, 1f);
     [SerializeField] private Vector2 midRange = new Vector2(0f, 1f);
@@ -87,6 +85,9 @@ public class AudioReactiveVFX : MonoBehaviour
     private float beatPulseTimer;
     private Color currentPrimary, currentSecondary, currentAccent;
     private float colorTime;
+
+    // Performance optimization
+    private int _frameCounter = 0;
     
     // Volume spike detection
     private float totalVolume;
@@ -155,18 +156,17 @@ public class AudioReactiveVFX : MonoBehaviour
         currentSecondary = Color.red;
         currentAccent = Color.white;
 
-        // Initialize base radii
-        baseRadius = fallbackRadius;
-        baseInnerRadius = fallbackInnerRadius;
-        _smoothedRadius = fallbackRadius;
-        
-        // Apply fallback values initially
-        ApplyFallbackValues();
+        // Initialize base radii from range midpoints
+        baseRadius = (radiusRange.x + radiusRange.y) / 2f;
+        baseInnerRadius = (innerRadiusRange.x + innerRadiusRange.y) / 2f;
+        _smoothedRadius = baseRadius;
+
+        // No fallback values needed - QuarkVisualController handles non-Playing states
     }
 
     private void Update()
     {
-        // More robust audio playing check
+        // Only operate when audio is actively playing
         if (audioSource == null)
         {
             // Try to find audio source again
@@ -174,28 +174,36 @@ public class AudioReactiveVFX : MonoBehaviour
             {
                 audioSource = musicGenerator.GetComponent<AudioSource>();
             }
-            
+
             if (audioSource == null)
             {
-                ApplyFallbackValues();
-                return;
+                return; // Do nothing - QuarkVisualController handles visuals
             }
         }
-        
+
         // Check if audio is actually playing with a clip loaded
         if (!audioSource.isPlaying || audioSource.clip == null || audioSource.time <= 0)
         {
             if (enableDebugLogs && Time.frameCount % 120 == 0)
             {
-                Debug.Log($"[AudioReactiveVFX] Waiting for audio: isPlaying={audioSource.isPlaying}, hasClip={audioSource.clip != null}, time={audioSource.time:F2}s");
+                Debug.Log($"[AudioReactiveVFX] Audio not playing - QuarkVisualController handles visuals");
             }
-            ApplyFallbackValues();
-            return;
+            return; // Do nothing - let state machine handle transition to Idle
         }
 
-        AnalyzeFrequencies();
-        DetectBeats();
-        DetectVolumeSpikes();
+        // Frame-skipping optimization for Quest performance
+        // Update audio analysis every Nth frame to reduce CPU/GPU load
+        _frameCounter++;
+        bool shouldAnalyze = !useFrameSkipping || (_frameCounter % (frameSkip + 1) == 0);
+
+        if (shouldAnalyze)
+        {
+            AnalyzeFrequencies();
+            DetectBeats();
+            DetectVolumeSpikes();
+        }
+
+        // Always update colors for smooth transitions
         UpdateColors();
         UpdateRadiusPulse();
         ApplyToVFX();
@@ -355,8 +363,6 @@ public class AudioReactiveVFX : MonoBehaviour
     {
         if (!modulateRadius || !enableVolumePulse)
         {
-            baseRadius = fallbackRadius;
-            baseInnerRadius = fallbackInnerRadius;
             return;
         }
 
@@ -373,11 +379,12 @@ public class AudioReactiveVFX : MonoBehaviour
         }
         else
         {
-            baseRadius = fallbackRadius;
+            // Use range midpoint as default
+            baseRadius = (radiusRange.x + radiusRange.y) / 2f;
         }
-        
-        // Inner radius is always based on fallback (not spatially adaptive)
-        baseInnerRadius = fallbackInnerRadius;
+
+        // Inner radius uses range midpoint (not spatially adaptive)
+        baseInnerRadius = (innerRadiusRange.x + innerRadiusRange.y) / 2f;
     }
 
     /// <summary>
@@ -549,36 +556,6 @@ public class AudioReactiveVFX : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Apply fallback values when audio is not playing.
-    /// </summary>
-    private void ApplyFallbackValues()
-    {
-        if (vfx == null) return;
-
-        if (updateAudioBands)
-        {
-            vfx.SetFloat(PARAM_AUDIO_BASS, fallbackBass);
-            vfx.SetFloat(PARAM_AUDIO_MID, fallbackMid);
-            vfx.SetFloat(PARAM_AUDIO_TREBLE, fallbackTreble);
-        }
-
-        if (modulateEnergy)
-        {
-            vfx.SetFloat(PARAM_ENERGY, fallbackEnergy);
-        }
-
-        if (modulateTurbulence)
-        {
-            vfx.SetFloat(PARAM_TURBULENCE, fallbackTurbulence);
-        }
-
-        if (modulateRadius)
-        {
-            vfx.SetFloat(PARAM_RADIUS, fallbackRadius);
-            vfx.SetFloat(PARAM_INNER_RADIUS, fallbackInnerRadius);
-        }
-    }
 
     /// <summary>
     /// Get current frequency band values (for debugging or external use).

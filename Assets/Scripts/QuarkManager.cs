@@ -1,181 +1,236 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Oculus.Interaction.Input;
+using Jusvibes.Core;
 using UnityEngine;
 
+/// <summary>
+/// Manages the Quark lifecycle: spawning, tracking, and responding to grab events.
+/// Works with the new QuarkEntity system and coordinates with PalmDetector.
+/// </summary>
 public class QuarkManager : Singleton<QuarkManager>
 {
-    [Header("Quark + Room")]
-    [SerializeField] private RoomScanner roomScanner;
-    [SerializeField] private Quark quarkPrefab;
-    [SerializeField] private Transform quarkSpawnParent; // attach b_l_wrist here
-    [SerializeField] private AudioSource justVibesSource;
-    [SerializeField] private IHand _leftHand;        // assign in Inspector
-    [SerializeField] private IHand _rightHand;       // assign in Inspector
-    [SerializeField] private Transform _scaleTarget; // object to scale
+    [Header("Quark Spawning")]
+    [SerializeField] private QuarkEntity quarkPrefab;
+    [SerializeField] private Transform quarkSpawnParent; // Attach to b_l_wrist
 
-    [SerializeField] private List<AudioClip> presetClips;
-    
-    [SerializeField] private List<AudioClip> justVibesClips;
+    [Header("Dependencies")]
+    [SerializeField] private PalmDetector palmDetector;
 
-    [Tooltip("Pinch strength above this counts as 'pinching'.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float pinchStrengthThreshold = 0.7f;
+    [Header("Settings")]
+    [SerializeField] private float respawnDelay = 3f;
 
-    [Tooltip("Minimum uniform scale.")]
-    [SerializeField] private float minScale = 0.3f;
-
-    [Tooltip("Maximum uniform scale.")]
-    [SerializeField] private float maxScale = 3f;
-
-    private bool _isTwoHandScaling = false;
-    private float _initialHandsDistance = 0f;
-    private Vector3 _initialObjectScale;
-    
-    
-    [Header("Palm Up Detection")]
-    [Tooltip("Dot threshold: 1 = exactly up, 0 = sideways, -1 = down.")]
-    [Range(-1f, 1f)]
-    [SerializeField] private float palmUpThreshold = 0.75f;
-
-    private Quark spawnedQuark = null;
-    private bool lastPalmUp = false; // for change-detect
-    private List<Quark> allQuarks = new();
+    // State
+    private QuarkEntity _activeQuark;
+    private List<QuarkEntity> _allQuarks = new List<QuarkEntity>();
     
     protected override void Awake()
     {
         base.Awake();
-        Debug.Log("[QuarkManager] Awake");
+        Debug.Log("[QuarkManager] Initialized");
     }
 
     private void Start()
     {
-        SpawnQuark(quarkSpawnParent);
+        // Subscribe to palm detector events FIRST, before checking state
+        if (palmDetector != null)
+        {
+            palmDetector.OnPalmFacingCamera += HandlePalmFacingCamera;
+            palmDetector.OnPalmNotFacingCamera += HandlePalmNotFacingCamera;
+            
+            // Check initial state - only spawn if palm is already facing camera
+            // Wait a couple frames to ensure PalmDetector has fully initialized
+            StartCoroutine(CheckInitialPalmState());
+        }
+        else
+        {
+            Debug.LogWarning("[QuarkManager] PalmDetector not assigned!");
+        }
     }
-
-    public void SpawnQuark(Transform parent)
+    
+    /// <summary>
+    /// Check initial palm state after PalmDetector has had a chance to initialize
+    /// </summary>
+    private System.Collections.IEnumerator CheckInitialPalmState()
     {
-        spawnedQuark = Instantiate(quarkPrefab, parent);
-        spawnedQuark.transform.localPosition = Vector3.zero;
-        spawnedQuark.transform.localRotation = Quaternion.identity;
-        spawnedQuark.gameObject.SetActive(false);
-        spawnedQuark.Audio.clip = presetClips[UnityEngine.Random.Range(0, presetClips.Count)];
-        allQuarks.Add(spawnedQuark);
+        // Wait a couple frames to ensure PalmDetector has initialized and updated
+        yield return null;
+        yield return null;
         
-        Debug.Log("[QuarkManager] Spawned new Quark.");
+        if (palmDetector != null)
+        {
+            if (palmDetector.IsPalmFacingCamera)
+            {
+                Debug.Log("[QuarkManager] Initial palm state: facing camera - spawning Quark");
+                HandlePalmFacingCamera();
+            }
+            else
+            {
+                Debug.Log($"[QuarkManager] Initial palm state: not facing camera (IsPalmFacingCamera={palmDetector.IsPalmFacingCamera}) - waiting for palm to face camera");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[QuarkManager] PalmDetector became null during initialization check");
+        }
     }
 
-    public async Task GenerateMusicForQuark(Quark quark)
+    private void OnDestroy()
     {
-        Debug.Log("[QuarkManager] Generating music for Quark...");
-        await roomScanner.ScanAndPlayMusic(quark);
+        // Unsubscribe from palm detector events
+        if (palmDetector != null)
+        {
+            palmDetector.OnPalmFacingCamera -= HandlePalmFacingCamera;
+            palmDetector.OnPalmNotFacingCamera -= HandlePalmNotFacingCamera;
+        }
     }
 
-    public void OnQuarkGrabbed(Quark quark, bool isFirstGrab)
+    /// <summary>
+    /// Spawn a new Quark at the wrist position
+    /// </summary>
+    public void SpawnQuark()
     {
-        Debug.Log($"[QuarkManager] Quark grabbed. First grab: {isFirstGrab}");
+        if (_activeQuark != null)
+        {
+            Debug.LogWarning("[QuarkManager] Active Quark already exists. Skipping spawn.");
+            return;
+        }
+
+        _activeQuark = Instantiate(quarkPrefab, quarkSpawnParent);
+        _activeQuark.transform.localPosition = Vector3.zero;
+        _activeQuark.transform.localRotation = Quaternion.identity;
+        _allQuarks.Add(_activeQuark);
+
+        // Inject pipeline dependencies from scene
+        InjectPipelineDependencies(_activeQuark);
+
+        // Subscribe to Quark events
+        _activeQuark.OnGrabbed += HandleQuarkGrabbed;
+        _activeQuark.OnReleased += HandleQuarkReleased;
+
+        Debug.Log("[QuarkManager] Spawned new Quark");
+    }
+
+    /// <summary>
+    /// Inject pipeline dependencies into a spawned Quark
+    /// </summary>
+    private void InjectPipelineDependencies(QuarkEntity quark)
+    {
+        var orchestrator = quark.GetComponent<QuarkLifecycleOrchestrator>();
+        if (orchestrator == null)
+        {
+            Debug.LogWarning("[QuarkManager] No QuarkLifecycleOrchestrator found on spawned Quark");
+            return;
+        }
+
+        // Find scene singletons
+        var captureController = FindObjectOfType<CaptureController>();
+        var whisperRecorder = FindObjectOfType<WhisperRecorder>();
+        var insightProcessor = FindObjectOfType<CaptureInsightProcessor>();
+        var musicGenerator = FindObjectOfType<MusicGenerator>();
+
+        // Inject dependencies
+        orchestrator.InjectDependencies(
+            captureController,
+            whisperRecorder,
+            insightProcessor,
+            musicGenerator
+        );
+
+        // Log warnings if any dependencies are missing
+        if (captureController == null)
+            Debug.LogWarning("[QuarkManager] CaptureController not found in scene");
+        if (whisperRecorder == null)
+            Debug.LogWarning("[QuarkManager] WhisperRecorder not found in scene");
+        if (insightProcessor == null)
+            Debug.LogWarning("[QuarkManager] CaptureInsightProcessor not found in scene");
+        if (musicGenerator == null)
+            Debug.LogWarning("[QuarkManager] MusicGenerator not found in scene");
+    }
+
+    /// <summary>
+    /// Handle palm facing camera - spawn and summon the Quark
+    /// </summary>
+    private void HandlePalmFacingCamera()
+    {
+        Debug.Log("[QuarkManager] HandlePalmFacingCamera called");
+        
+        // Spawn Quark if it doesn't exist
+        if (_activeQuark == null)
+        {
+            Debug.Log("[QuarkManager] Palm facing camera - spawning Quark");
+            SpawnQuark();
+        }
+        
+        // Summon the Quark (transition from Dormant to Summoned)
+        if (_activeQuark != null)
+        {
+            Debug.Log("[QuarkManager] Summoning Quark");
+            _activeQuark.Summon();
+        }
+        else
+        {
+            Debug.LogWarning("[QuarkManager] Tried to summon but _activeQuark is null!");
+        }
+    }
+
+    /// <summary>
+    /// Handle palm not facing camera - dismiss the Quark
+    /// </summary>
+    private void HandlePalmNotFacingCamera()
+    {
+        if (_activeQuark != null)
+        {
+            Debug.Log("[QuarkManager] Palm not facing camera - dismissing Quark");
+            _activeQuark.Dismiss();
+        }
+    }
+
+    /// <summary>
+    /// Handle Quark grabbed event
+    /// </summary>
+    private void HandleQuarkGrabbed(QuarkEntity quark, bool isFirstGrab)
+    {
+        Debug.Log($"[QuarkManager] Quark grabbed (first: {isFirstGrab})");
 
         if (isFirstGrab)
         {
-            spawnedQuark = null;
-            StartCoroutine(SpawnNewQuark());
+            // Unsubscribe from this Quark's events
+            quark.OnGrabbed -= HandleQuarkGrabbed;
+            quark.OnReleased -= HandleQuarkReleased;
+
+            // Clear active reference
+            _activeQuark = null;
+
+            // Spawn new Quark after delay
+            StartCoroutine(SpawnNewQuarkAfterDelay(respawnDelay));
         }
     }
 
-    private IEnumerator SpawnNewQuark(float delay = 3f)
+    /// <summary>
+    /// Handle Quark released event
+    /// </summary>
+    private void HandleQuarkReleased(QuarkEntity quark)
     {
-        Debug.Log($"[QuarkManager] Waiting {delay}s before spawning a new Quark...");
+        Debug.Log("[QuarkManager] Quark released");
+    }
+
+    /// <summary>
+    /// Spawn a new Quark after a delay
+    /// </summary>
+    private IEnumerator SpawnNewQuarkAfterDelay(float delay)
+    {
+        Debug.Log($"[QuarkManager] Waiting {delay}s before spawning new Quark...");
         yield return new WaitForSeconds(delay);
-
-        SpawnQuark(quarkSpawnParent);
+        SpawnQuark();
     }
 
-    private void Update()
-    {
-        // === PALM-UP LOGIC (your existing code) ===
+    /// <summary>
+    /// Get all Quarks ever spawned
+    /// </summary>
+    public List<QuarkEntity> GetAllQuarks() => _allQuarks;
 
-        // World-space up direction of the wrist
-        Vector3 palmNormal = -quarkSpawnParent.up; // already world-space
-
-        // Debug line in Scene view
-        Debug.DrawLine(quarkSpawnParent.position,
-                       quarkSpawnParent.position + palmNormal * 0.1f,
-                       Color.blue);
-
-        // Compare wrist up with global up
-        float dot = Vector3.Dot(palmNormal.normalized, Vector3.up);
-        bool palmUp = dot > palmUpThreshold;
-
-        // Only log when state changes
-        if (palmUp != lastPalmUp)
-        {
-            if (palmUp)
-            {
-                justVibesSource.clip = justVibesClips[UnityEngine.Random.Range(0, justVibesClips.Count)];
-                justVibesSource.Play();
-            }
-            Debug.Log($"[QuarkManager] PalmUp = {palmUp} (dot: {dot:F3})");
-            lastPalmUp = palmUp;
-        }
-
-        if (spawnedQuark != null)
-        {
-            spawnedQuark.gameObject.SetActive(palmUp);
-        }
-
-        // === TWO-HAND PINCH SCALING ===
-
-        if (_leftHand == null || _rightHand == null || _scaleTarget == null)
-            return;
-
-        // 1) Check pinch state on both hands (index finger)
-        bool leftPinching =
-            _leftHand.GetFingerIsPinching(HandFinger.Index) &&
-            _leftHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
-
-        bool rightPinching =
-            _rightHand.GetFingerIsPinching(HandFinger.Index) &&
-            _rightHand.GetFingerPinchStrength(HandFinger.Index) >= pinchStrengthThreshold;
-
-        bool bothPinching = leftPinching && rightPinching;
-
-        // 2) Get a representative position for each hand
-        //    (you can use wrist, index tip, or a custom anchor)
-        Pose leftPose, rightPose;
-        if (!_leftHand.GetRootPose(out leftPose) || !_rightHand.GetRootPose(out rightPose))
-            return;
-
-        Vector3 leftPos  = leftPose.position;
-        Vector3 rightPos = rightPose.position;
-
-        float currentDistance = Vector3.Distance(leftPos, rightPos);
-
-        // 3) State transitions
-        if (bothPinching && !_isTwoHandScaling)
-        {
-            // just started two-hand pinch → capture baseline
-            _isTwoHandScaling = true;
-            _initialHandsDistance = Mathf.Max(currentDistance, 0.001f); // avoid div by zero
-            _initialObjectScale = _scaleTarget.localScale;
-            // Debug.Log("[QuarkManager] Two-hand pinch scaling started.");
-        }
-        else if (bothPinching && _isTwoHandScaling)
-        {
-            // actively scaling
-            float scaleFactor = currentDistance / _initialHandsDistance;
-
-            // Optionally enforce uniform scaling based on x
-            float uniform = Mathf.Clamp(scaleFactor, minScale, maxScale);
-            _scaleTarget.localScale = _initialObjectScale * uniform;
-        }
-        else if (!bothPinching && _isTwoHandScaling)
-        {
-            // pinch released on at least one hand → stop scaling
-            _isTwoHandScaling = false;
-            // Debug.Log("[QuarkManager] Two-hand pinch scaling ended.");
-        }
-    }
-
+    /// <summary>
+    /// Get the currently active (ungrabbed) Quark
+    /// </summary>
+    public QuarkEntity GetActiveQuark() => _activeQuark;
 }

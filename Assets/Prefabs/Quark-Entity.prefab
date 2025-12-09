@@ -127,16 +127,19 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5812852846234348376}
+  - component: {fileID: 8293664559577516774}
+  - component: {fileID: 2990232260321050789}
   - component: {fileID: 6014060989442040936}
-  - component: {fileID: 3363119770545057146}
-  - component: {fileID: 4512044462036445783}
   - component: {fileID: 363806779628730416}
   - component: {fileID: 7238119870141962407}
   - component: {fileID: 6119583141843826020}
-  - component: {fileID: 5200072622619804558}
-  - component: {fileID: 9033326700084045631}
+  - component: {fileID: 6599551175034385944}
+  - component: {fileID: 6569165625008865211}
+  - component: {fileID: 2384797300168209878}
+  - component: {fileID: 8082310607234803382}
+  - component: {fileID: 7063876727770812845}
   m_Layer: 0
-  m_Name: '[BuildingBlock] Grabbable-Quark'
+  m_Name: Quark-Entity
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -151,7 +154,7 @@ Transform:
   m_GameObject: {fileID: 4789230505339621413}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.56, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.08, y: 0.08, z: 0.08}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -161,25 +164,7 @@ Transform:
   - {fileID: 3106735910468338696}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6014060989442040936
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4789230505339621413}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Meta.XR.BuildingBlocks::Meta.XR.BuildingBlocks.BuildingBlock
-  blockId: 7358e191-33b7-43ca-b066-b2f00531ac66
-  instanceId: bf813e3a-3d1e-4e9b-9e3f-6942cafa2225
-  version: 1
-  installationRoutineCheckpoint:
-    _installationRoutineId: 
-    _installationVariants: []
---- !u!33 &3363119770545057146
+--- !u!33 &8293664559577516774
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -187,7 +172,7 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4789230505339621413}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &4512044462036445783
+--- !u!23 &2990232260321050789
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -235,6 +220,24 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6014060989442040936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4789230505339621413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Meta.XR.BuildingBlocks::Meta.XR.BuildingBlocks.BuildingBlock
+  blockId: 7358e191-33b7-43ca-b066-b2f00531ac66
+  instanceId: bf813e3a-3d1e-4e9b-9e3f-6942cafa2225
+  version: 1
+  installationRoutineCheckpoint:
+    _installationRoutineId: 
+    _installationVariants: []
 --- !u!65 &363806779628730416
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -305,7 +308,7 @@ MonoBehaviour:
   _rigidbody: {fileID: 7238119870141962407}
   _kinematicWhileSelected: 1
   _throwWhenUnselected: 1
---- !u!114 &5200072622619804558
+--- !u!114 &6599551175034385944
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -314,15 +317,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 4789230505339621413}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 395c3347abd80114eaa9a87027c25139, type: 3}
+  m_Script: {fileID: 11500000, guid: d75203fe462b9d248b4c23c7b042a72e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Quark
-  state: 0
-  quarkAudio: {fileID: 891788679228456578}
-  visualEffect: {fileID: 3745694674385093892}
-  pickupAudio: {fileID: 3632996981833047889}
-  dropAudio: {fileID: 3733331532547255349}
---- !u!114 &9033326700084045631
+  m_EditorClassIdentifier: Assembly-CSharp::QuarkStateMachine
+  initialState: 0
+  logStateChanges: 1
+--- !u!114 &6569165625008865211
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -331,25 +331,189 @@ MonoBehaviour:
   m_GameObject: {fileID: 4789230505339621413}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33ad6e67bf20440a48949c4beddd9ab1, type: 3}
+  m_Script: {fileID: 11500000, guid: d7af51529bcaac548a26be2e0a217bdc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuarkGlowShaderDriver
-  audioReactive: {fileID: 3833675101143802462}
+  m_EditorClassIdentifier: Assembly-CSharp::QuarkVisualController
+  stateMachine: {fileID: 6599551175034385944}
   vfx: {fileID: 3745694674385093892}
-  targetRenderer: {fileID: 4512044462036445783}
+  stateProperty: QuarkState
+  outerRadiusProperty: ParticleBoundary 1_radius
+  innerRadiusProperty: ParticleInternal_radius
+  spawnRateProperty: SpawnRate
+  particleSizeProperty: ParticleSize
+  turbulenceProperty: TurbulenceIntensity
+  vortexProperty: VortexStrength
   primaryColorProperty: PrimaryColor
   secondaryColorProperty: SecondaryColor
-  glowProperty: _GlowPulse
-  trebleProperty: _TrebleAmount
-  hoverProperty: _Hover
-  vfxPrimaryColorProperty: PrimaryColor
-  vfxSecondaryColorProperty: SecondaryColor
-  vfxAccentColorProperty: AccentColor
-  glowSmoothing: 10
-  trebleSmoothing: 10
-  hoverSmoothing: 10
-  maxGlowFromBass: 1
-  maxTrebleInfluence: 1
+  alphaProperty: Alpha
+  dormantProfile:
+    outerRadius: 0.5
+    innerRadius: 0.3
+    spawnRate: 0
+    particleSize: 0.01
+    turbulence: 0
+    vortex: 0
+    alpha: 0.5
+    primaryColor: {r: 1, g: 1, b: 1, a: 1}
+    secondaryColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  summonedProfile:
+    outerRadius: 0.8
+    innerRadius: 0.5
+    spawnRate: 0
+    particleSize: 0.01
+    turbulence: 0
+    vortex: 0
+    alpha: 0.8
+    primaryColor: {r: 1, g: 1, b: 1, a: 1}
+    secondaryColor: {r: 0.8, g: 0.8, b: 1, a: 1}
+  grabbedProfile:
+    outerRadius: 1
+    innerRadius: 0.7
+    spawnRate: 5
+    particleSize: 0.01
+    turbulence: 0.5
+    vortex: 0.2
+    alpha: 1
+    primaryColor: {r: 0, g: 1, b: 1, a: 1}
+    secondaryColor: {r: 0, g: 0, b: 1, a: 1}
+  generatingProfile:
+    outerRadius: 1.2
+    innerRadius: 0.7
+    spawnRate: 10
+    particleSize: 0.01
+    turbulence: 1.8
+    vortex: 0.8
+    alpha: 1
+    primaryColor: {r: 1, g: 0.5, b: 0, a: 1}
+    secondaryColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  readyProfile:
+    outerRadius: 2
+    innerRadius: 1.4
+    spawnRate: 15
+    particleSize: 0.01
+    turbulence: 1
+    vortex: 0.3
+    alpha: 1
+    primaryColor: {r: 1, g: 0, b: 1, a: 1}
+    secondaryColor: {r: 0, g: 1, b: 1, a: 1}
+  playingProfile:
+    outerRadius: 2.5
+    innerRadius: 1.8
+    spawnRate: 15
+    particleSize: 0.01
+    turbulence: 2
+    vortex: 0.3
+    alpha: 1
+    primaryColor: {r: 1, g: 0, b: 1, a: 1}
+    secondaryColor: {r: 0, g: 1, b: 1, a: 1}
+  idleProfile:
+    outerRadius: 2.2
+    innerRadius: 1.6
+    spawnRate: 10
+    particleSize: 0.01
+    turbulence: 0.8
+    vortex: 0.2
+    alpha: 0.9
+    primaryColor: {r: 0, g: 0, b: 1, a: 1}
+    secondaryColor: {r: 0, g: 1, b: 1, a: 1}
+  errorProfile:
+    outerRadius: 1.5
+    innerRadius: 1
+    spawnRate: 10
+    particleSize: 0.01
+    turbulence: 0.5
+    vortex: 0.1
+    alpha: 0.8
+    primaryColor: {r: 1, g: 0, b: 0, a: 1}
+    secondaryColor: {r: 1, g: 0.3, b: 0, a: 1}
+  transitionTime: 0.5
+  transitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &2384797300168209878
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4789230505339621413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17675f7f41a19f8458226405520de524, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuarkAudioController
+  stateMachine: {fileID: 6599551175034385944}
+  mainAudioSource: {fileID: 891788679228456578}
+  pickupSfx: {fileID: 3632996981833047889}
+  dropSfx: {fileID: 3733331532547255349}
+  presetClips: []
+  shufflePresets: 1
+  fadeInDuration: 0.5
+  fadeOutDuration: 1
+  autoPlayOnReady: 1
+--- !u!114 &8082310607234803382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4789230505339621413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1236bffacce58814388a7f9eb1accb2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuarkLifecycleOrchestrator
+  stateMachine: {fileID: 6599551175034385944}
+  visualController: {fileID: 6569165625008865211}
+  audioController: {fileID: 2384797300168209878}
+  captureController: {fileID: 0}
+  whisperRecorder: {fileID: 0}
+  insightProcessor: {fileID: 0}
+  musicGenerator: {fileID: 0}
+  captureOnGrab: 1
+  recordVoiceOnGrab: 1
+  maxRetries: 3
+  timeoutSeconds: 300
+--- !u!114 &7063876727770812845
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4789230505339621413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 821b1f7f3d841be44a4bcafaba83720e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuarkEntity
+  stateMachine: {fileID: 6599551175034385944}
+  visualController: {fileID: 6569165625008865211}
+  audioController: {fileID: 2384797300168209878}
+  orchestrator: {fileID: 8082310607234803382}
+  grabbable: {fileID: 6119583141843826020}
+  grabbableRenderer: {fileID: 2990232260321050789}
+  grabbableTransform: {fileID: 5812852846234348376}
 --- !u!1 &6106186002075999335
 GameObject:
   m_ObjectHideFlags: 0
@@ -489,7 +653,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3106735910468338696}
   m_Layer: 0
-  m_Name: Effects
+  m_Name: SFX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -685,7 +849,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 24300002, guid: 89cec87b8c5894e5c9a27d998854147d, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 98095db0cf1cb419e880f0eb32a3d802, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 1
@@ -779,196 +943,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 5812852846234348376}
     m_Modifications:
     - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_Asset
-      value: 
-      objectReference: {fileID: 8926484042661614526, guid: a96d94ba719654425be88818906b6723, type: 3}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Int.m_Array.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.size
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Int.m_Array.Array.data[1].m_Name
-      value: QuarkState
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[4].m_Name
-      value: AudioTreble
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[5].m_Name
-      value: AudioMid
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[6].m_Name
-      value: AudioBass
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[7].m_Name
-      value: CurlIntensity
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[8].m_Name
-      value: ParticleInternal_radius
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[9].m_Name
-      value: ParticleBoundary 1_radius
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[0].m_Value
-      value: -0.75
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[10].m_Name
-      value: ParticleSize
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[11].m_Name
-      value: VortexStrength
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[12].m_Name
-      value: Radius
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[13].m_Name
-      value: SpawnRate
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[14].m_Name
-      value: GlowPulse
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[1].m_Value
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[2].m_Value
-      value: 4.14
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[3].m_Value
-      value: 5.06
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[4].m_Value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[5].m_Value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[6].m_Value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[7].m_Value
-      value: 1.77
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[8].m_Value
-      value: -0.33
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[9].m_Value
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
       propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[10].m_Value
-      value: 0.03
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[11].m_Value
-      value: 1.03
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[13].m_Value
-      value: 2000
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Int.m_Array.Array.data[1].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[4].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[5].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[6].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[7].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[8].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[9].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[0].m_Value.x
-      value: 0.26225072
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[0].m_Value.y
-      value: 0.15592647
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[0].m_Value.z
-      value: 0.05951124
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[1].m_Value.x
-      value: 0.010960094
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[1].m_Value.y
-      value: 0.19461781
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[1].m_Value.z
-      value: 0.36130688
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[10].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[11].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[12].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[13].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[14].m_Overridden
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3167595801779729812, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3167595801779729812, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: minRadius
-      value: 0.3
+      value: 0.015
       objectReference: {fileID: 0}
     - target: {fileID: 4484304954541128558, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1010,40 +986,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4484304954541128558, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: m_ConstrainProportionsScale
+    - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: audioSource
+      value: 
+      objectReference: {fileID: 891788679228456578}
+    - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: radiusRange.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: fallbackRadius
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: fallbackInnerRadius
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 5451088563107741241, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
       propertyPath: m_Name
-      value: QUARK
+      value: Particles
       objectReference: {fileID: 0}
-    - target: {fileID: 8765432109876543210, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: midRange.y
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 8765432109876543210, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: bassRange.y
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 8765432109876543210, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: trebleRange.y
-      value: 10
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 3167595801779729812, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+    - target: {fileID: 6260757946663048996, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: audioSource
+      value: 
+      objectReference: {fileID: 891788679228456578}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5451088563107741241, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4345416061253253278}
-    - targetCorrespondingSourceObject: {fileID: 5451088563107741241, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3833675101143802462}
-    - targetCorrespondingSourceObject: {fileID: 5451088563107741241, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7284154391728607742}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
 --- !u!4 &1166197210250377690 stripped
 Transform:
@@ -1055,149 +1025,3 @@ VisualEffect:
   m_CorrespondingSourceObject: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
   m_PrefabInstance: {fileID: 3320377471835357876}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &7328044463678291085 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5451088563107741241, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-  m_PrefabInstance: {fileID: 3320377471835357876}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &4345416061253253278
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7328044463678291085}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 425fbab86e39d4339966ad2a465cf617, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AudioSpectrumDriver
-  audioSource: {fileID: 891788679228456578}
-  vfx: {fileID: 3745694674385093892}
-  fftSize: 1024
-  smooth: 10
---- !u!114 &3833675101143802462
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7328044463678291085}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4bf9bc2daaff403f9735b4283d44efb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AudioReactiveVFX
-  audioSource: {fileID: 891788679228456578}
-  vfx: {fileID: 3745694674385093892}
-  musicGenerator: {fileID: 0}
-  fftSize: 512
-  bassBoost: 0.15
-  midBoost: 1.2
-  trebleBoost: 0.55
-  smoothSpeed: 3.03
-  sensitivity: 50
-  enableBeatDetection: 1
-  beatThreshold: 1.3
-  beatCooldown: 0.2
-  beatEnergyPulse: 200
-  beatPulseDuration: 0.1
-  beatRadiusAmount: 0.3
-  beatRadiusCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  enableVolumePulse: 1
-  volumeSpikeThreshold: 1.5
-  volumeSpikeCooldown: 0.15
-  radiusPulseAmount: 0.3
-  radiusPulseDuration: 0.4
-  radiusPulseCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  colorMode: 0
-  colorPreset: {fileID: 0}
-  colorCycleSpeed: 1
-  colorSaturation: 0.8
-  colorBrightness: 1
-  colorHueOffset: 0.1
-  updateAudioBands: 1
-  updateColors: 1
-  modulateEnergy: 1
-  modulateTurbulence: 1
-  modulateRadius: 1
-  baseEnergy: 100
-  energyMultiplier: 2
-  fallbackBass: 0.1
-  fallbackMid: 0.1
-  fallbackTreble: 0.1
-  fallbackEnergy: 100
-  fallbackTurbulence: 1
-  fallbackRadius: 0.4
-  fallbackInnerRadius: 4.9
-  bassRange: {x: 0, y: 1}
-  midRange: {x: 0, y: 1}
-  trebleRange: {x: 0, y: 1}
-  energyRange: {x: 50, y: 400}
-  turbulenceRange: {x: 0.01, y: 2}
-  radiusRange: {x: 0.7, y: 5.94}
-  innerRadiusRange: {x: 1, y: 4.3}
-  trebleFloor: 0.25
-  trebleExponent: 2
-  enableDebugLogs: 0
---- !u!114 &7284154391728607742
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7328044463678291085}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd0c38ad6e69d49999b7189f2a440840, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuarkVFXStateBinder
-  quark: {fileID: 5200072622619804558}
-  vfx: {fileID: 3745694674385093892}
-  quarkStatePropertyName: QuarkState
