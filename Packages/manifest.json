@@ -21,10 +21,10 @@
     "com.unity.xr.interaction.toolkit": "3.2.2",
     "com.unity.xr.management": "4.5.3",
     "com.unity.xr.meta-openxr": "2.3.0",
-    "com.unity.xr.oculus": "4.5.2",
     "com.unity.xr.openxr": "1.16.0",
     "com.utilities.buildpipeline": "1.8.1",
     "com.utilities.encoder.ogg": "5.0.1",
+    "com.whisper.unity": "1.4.0",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
@@ -64,7 +64,8 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.openai",
-        "com.utilities"
+        "com.utilities",
+        "com.whisper.unity"
       ]
     }
   ]

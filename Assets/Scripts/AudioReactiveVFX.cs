@@ -108,7 +108,7 @@ public class AudioReactiveVFX : MonoBehaviour
     private const string PARAM_SECONDARY_COLOR = "SecondaryColor";
     private const string PARAM_ENERGY = "Energy";
     private const string PARAM_TURBULENCE = "TurbulenceIntensity";
-    private const string PARAM_RADIUS = "ParticleBoundary 1_radius";
+    private const string PARAM_RADIUS = "ParticleBoundary_radius";
     private const string PARAM_INNER_RADIUS = "ParticleInternal_radius";
 
     public enum ColorGradientMode

@@ -349,8 +349,8 @@ MonoBehaviour:
   dormantProfile:
     outerRadius: 0.5
     innerRadius: 0.3
-    spawnRate: 0
-    particleSize: 0.01
+    spawnRate: 50
+    particleSize: 0.015
     turbulence: 0
     vortex: 0
     alpha: 0.5
@@ -359,8 +359,8 @@ MonoBehaviour:
   summonedProfile:
     outerRadius: 0.8
     innerRadius: 0.5
-    spawnRate: 0
-    particleSize: 0.01
+    spawnRate: 200
+    particleSize: 0.015
     turbulence: 0
     vortex: 0
     alpha: 0.8
@@ -369,8 +369,8 @@ MonoBehaviour:
   grabbedProfile:
     outerRadius: 1
     innerRadius: 0.7
-    spawnRate: 5
-    particleSize: 0.01
+    spawnRate: 50
+    particleSize: 0.015
     turbulence: 0.5
     vortex: 0.2
     alpha: 1
@@ -379,8 +379,8 @@ MonoBehaviour:
   generatingProfile:
     outerRadius: 1.2
     innerRadius: 0.7
-    spawnRate: 10
-    particleSize: 0.01
+    spawnRate: 50
+    particleSize: 0.015
     turbulence: 1.8
     vortex: 0.8
     alpha: 1
@@ -389,8 +389,8 @@ MonoBehaviour:
   readyProfile:
     outerRadius: 2
     innerRadius: 1.4
-    spawnRate: 15
-    particleSize: 0.01
+    spawnRate: 50
+    particleSize: 0.015
     turbulence: 1
     vortex: 0.3
     alpha: 1
@@ -849,7 +849,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 24300002, guid: 89cec87b8c5894e5c9a27d998854147d, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 98095db0cf1cb419e880f0eb32a3d802, type: 3}
-  m_PlayOnAwake: 0
+  m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
   Loop: 1
@@ -946,6 +946,14 @@ PrefabInstance:
       propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[10].m_Value
       value: 0.015
       objectReference: {fileID: 0}
+    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: m_PropertySheet.m_Int.m_Array.Array.data[1].m_Overridden
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2157005152530139056, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
+      propertyPath: m_PropertySheet.m_Float.m_Array.Array.data[8].m_Overridden
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4484304954541128558, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -990,10 +998,6 @@ PrefabInstance:
       propertyPath: audioSource
       value: 
       objectReference: {fileID: 891788679228456578}
-    - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
-      propertyPath: radiusRange.x
-      value: 1.5
-      objectReference: {fileID: 0}
     - target: {fileID: 5195520496671289139, guid: a3197a4debbc4452facd6b47ee443208, type: 3}
       propertyPath: fallbackRadius
       value: 1

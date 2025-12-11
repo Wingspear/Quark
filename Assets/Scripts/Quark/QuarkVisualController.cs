@@ -12,7 +12,6 @@ public class QuarkVisualController : MonoBehaviour
         [SerializeField] private VisualEffect vfx;
 
         [Header("VFX Property Names")]
-        [SerializeField] private string stateProperty = "QuarkState";
         [SerializeField] private string outerRadiusProperty = "ParticleBoundary 1_radius";
         [SerializeField] private string innerRadiusProperty = "ParticleInternal_radius";
         [SerializeField] private string spawnRateProperty = "SpawnRate";
@@ -240,12 +239,6 @@ public class QuarkVisualController : MonoBehaviour
             // This is critical when transitioning between states with different spawn rates
             _currentProfile.spawnRate = _targetProfile.spawnRate;
 
-            // Set the state int for VFX Graph (if needed)
-            if (vfx != null && !string.IsNullOrEmpty(stateProperty))
-            {
-                vfx.SetInt(stateProperty, (int)current);
-            }
-            
             // Immediately apply spawnRate to VFX Graph to prevent particles from spawning during transition
             // This is especially important when transitioning to states with spawnRate = 0
             if (vfx != null && !string.IsNullOrEmpty(spawnRateProperty) && vfx.HasFloat(spawnRateProperty))

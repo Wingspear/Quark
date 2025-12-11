@@ -82,8 +82,8 @@ public class QuarkAudioController : MonoBehaviour
 
         private void Update()
         {
-            UpdateFade();
-            MonitorAudioPlayback();
+            // UpdateFade();
+            // MonitorAudioPlayback();
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ public class QuarkAudioController : MonoBehaviour
             }
 
             // Start playing with fade in
-            mainAudioSource.volume = 0f;
+            // mainAudioSource.volume = 0f;
             mainAudioSource.Play();
             StartFadeIn();
 
